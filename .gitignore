@@ -1,0 +1,69 @@
+# Environment files
+.env
+.env.local
+.env.production
+.env.development
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv/
+
+# Logs
+*.log
+logs/
+orchestrator.log
+
+# Docker
+.dockerignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Database
+*.db
+*.sqlite
+
+# Monitoring data
+monitoring/grafana/
+prometheus_data/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Coverage reports
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Test files
+test-*.py
+test-*.js
+
+# Node modules (for JS tests)
+node_modules/
+
+# Secrets
+*.pem
+*.key
+secrets/

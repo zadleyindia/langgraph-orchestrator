@@ -1,0 +1,45 @@
+version: '3.8'
+
+networks:
+  langgraph-network:
+    driver: bridge
+
+services:
+  # Core orchestration layer (standalone)
+  langgraph-orchestrator:
+    build: 
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: langgraph-orchestrator
+    ports:
+      - "8000:8000"
+    environment:
+      # Core configuration
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ENVIRONMENT=production
+      
+      # Memory service configuration (external)
+      # Update this URL when memory service is deployed
+      - MEMORY_SERVICE_URL=http://host.docker.internal:3003
+      - MEMORY_SERVICE_TIMEOUT=30
+      
+      # Agent configuration
+      - ENABLE_MULTI_AGENT=true
+      - DEFAULT_AGENT=personal_assistant
+      
+      # Logging
+      - LOG_LEVEL=INFO
+      - LOG_FORMAT=json
+      
+    networks:
+      - langgraph-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    volumes:
+      - ../logs:/app/logs
+      - ../.env:/app/.env:ro
