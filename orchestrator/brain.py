@@ -16,12 +16,10 @@ load_dotenv()
 from .state import ConversationState
 from .nodes.intent_analyzer import IntentAnalyzer
 from .nodes.planner import WorkflowPlanner
-from .nodes.executor import ToolExecutor
+from .nodes.executor_simple import ToolExecutor
 from .nodes.responder import ResponseGenerator
-from .clients.supergateway_client import SupergatewayClient
-from .clients.memory_client import MemoryClient
+from .clients.memory_client_direct import MemoryClientDirect
 from .coordination.agent_router import AgentRouter
-from .agents.personal_assistant import PersonalAssistantAgent
 
 class PersonalAIBrain:
     """Multi-Agent Personal AI Brain for Mohit - Orchestration with specialized agents"""
@@ -36,14 +34,13 @@ class PersonalAIBrain:
         # Initialize multi-agent system
         self.agent_router = AgentRouter()
         
-        # Initialize clients (still needed for tool execution)
-        self.supergateway = SupergatewayClient()
-        self.memory = MemoryClient()
+        # Initialize memory client
+        self.memory = MemoryClientDirect()
         
         # Initialize nodes (legacy - will be replaced by agent-specific processing)
         self.intent_analyzer = IntentAnalyzer(self.llm)
         self.planner = WorkflowPlanner(self.llm)
-        self.executor = ToolExecutor(self.supergateway)
+        self.executor = ToolExecutor(self.memory)  # Pass memory client instead
         self.responder = ResponseGenerator(self.llm)
         
         # Build the graph (enhanced for multi-agent coordination)
@@ -170,8 +167,7 @@ class PersonalAIBrain:
     async def get_status(self) -> Dict[str, Any]:
         """Get the status of the brain and connected services"""
         
-        # Check Supergateway connectivity
-        supergateway_status = await self.supergateway.health_check()
+        # Memory system status (no supergateway needed)
         
         # Check memory system
         memory_status = await self.memory.health_check()
@@ -181,10 +177,9 @@ class PersonalAIBrain:
         
         return {
             "brain_status": "multi_agent_operational",
-            "supergateway": supergateway_status,
             "memory": memory_status,
             "agent_system": agent_status,
             "llm_model": self.llm.model_name,
-            "graph_nodes": len(self.graph.nodes),
+            "graph_nodes": 4,  # Simplified count
             "architecture": "multi_agent_langgraph"
         }

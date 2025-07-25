@@ -5,7 +5,6 @@ Provides foundation for all specialized agents with Memory Integration
 
 from abc import ABC, abstractmethod
 from typing import Dict, List, Any, Optional
-from langchain_openai import ChatOpenAI
 from langchain.schema import HumanMessage, SystemMessage
 import uuid
 import os
@@ -17,12 +16,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from ..state import ConversationState
+from ..llm import get_default_llm
 
-# Import memory client
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-from memory_client import LangGraphMemoryClient
+# Memory client will be injected or created as needed
+# from ..clients.memory_client_direct import MemoryClientDirect
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -57,15 +54,14 @@ class BaseAgent(ABC):
         self.agent_id = f"{role}_{uuid.uuid4().hex[:8]}"
         self.supergateway_url = supergateway_url
         
-        # Initialize LLM for this agent
-        self.llm = ChatOpenAI(
-            model="gpt-4",
-            temperature=0.1,
-            api_key=os.getenv("OPENAI_API_KEY")
+        # Initialize LLM for this agent using flexible configuration
+        self.llm = get_default_llm(
+            # Agent-specific overrides can be passed here
+            temperature=self._get_agent_temperature()
         )
         
-        # Initialize memory client
-        self.memory_client = LangGraphMemoryClient(supergateway_url)
+        # Initialize memory client (placeholder - will be replaced with real MCP)
+        self.memory_client = None  # MemoryClientDirect()
         self.memory_initialized = False
         
         # Build system prompt
@@ -244,7 +240,8 @@ Respond in JSON format:
             
         try:
             # Test memory connectivity
-            is_healthy = await self.memory_client.health_check()
+            health = await self.memory_client.health_check()
+            is_healthy = health.get('status') == 'healthy'
             if not is_healthy:
                 logger.warning(f"Agent {self.agent_id}: Memory service unhealthy, proceeding without persistence")
                 return False
@@ -264,17 +261,18 @@ Respond in JSON format:
         """Load recent memories and context for this agent"""
         try:
             # Get recent memories for this agent
-            recent_memories = await self.memory_client.get_agent_memories(
-                agent_id=self.agent_id,
+            search_result = await self.memory_client.search_memories(
+                query=f"agent:{self.agent_id}",
                 limit=10
             )
+            recent_memories = search_result.get('memories', [])
             
             self.recent_memories = recent_memories
             self.context["recent_memories"] = recent_memories
             
-            # Get daily brief for context
-            daily_brief = await self.memory_client.get_daily_brief()
-            self.context["daily_context"] = daily_brief
+            # Get daily brief for context (if available in future)
+            # daily_brief = await self.memory_client.get_daily_brief()
+            self.context["daily_context"] = {}
             
             logger.info(f"Loaded {len(recent_memories)} recent memories for agent {self.agent_id}")
             
@@ -300,10 +298,12 @@ Respond in JSON format:
                 **(metadata or {})
             }
             
-            result = await self.memory_client.store_memory(
-                agent_id=self.agent_id,
-                content=content,
-                entity_type=entity_type
+            result = await self.memory_client.remember(
+                entity=entity_type,
+                information=content,
+                agent_type=self.role,
+                importance=metadata.get('importance', 0.5),
+                confidence=metadata.get('confidence', 0.8)
             )
             
             logger.info(f"Agent {self.agent_id} stored memory: {content[:100]}...")
@@ -319,10 +319,11 @@ Respond in JSON format:
             return []
             
         try:
-            memories = await self.memory_client.search_memories(
+            search_result = await self.memory_client.search_memories(
                 query=query,
                 limit=limit
             )
+            memories = search_result.get('memories', [])
             
             logger.info(f"Agent {self.agent_id} recalled {len(memories)} memories for query: {query}")
             return memories
@@ -346,11 +347,18 @@ Respond in JSON format:
                 **(metadata or {})
             }
             
-            result = await self.memory_client.store_entity(
-                entity_name=name,
-                entity_type=entity_type,
-                observations=observations,
-                agent_context=agent_context
+            # Store entity as a memory with structured information
+            entity_info = {
+                "entity_type": entity_type,
+                "observations": observations,
+                "metadata": agent_context
+            }
+            result = await self.memory_client.remember(
+                entity=name,
+                information=str(entity_info),
+                agent_type=self.role,
+                importance=0.7,
+                confidence=0.9
             )
             
             logger.info(f"Agent {self.agent_id} created entity: {name}")
@@ -429,3 +437,15 @@ Respond in JSON format:
                f"Processed {conversation_count} conversations. " \
                f"Accessed {memory_count} memories. " \
                f"Personality: {self.personality}."
+    
+    def _get_agent_temperature(self) -> float:
+        """Get agent-specific temperature based on role"""
+        # Different agents might need different temperatures
+        temperature_map = {
+            "personal_assistant": 0.1,  # More consistent responses
+            "data_analyst": 0.0,        # Highly deterministic
+            "hr_director": 0.3,         # Some creativity
+            "dev_lead": 0.2,            # Mostly consistent
+            "operations_manager": 0.1   # Consistent
+        }
+        return temperature_map.get(self.role, 0.1)

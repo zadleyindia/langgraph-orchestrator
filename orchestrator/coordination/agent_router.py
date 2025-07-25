@@ -14,11 +14,15 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from ..agents.base_agent import BaseAgent
+
+# Import agents (now with ReAct built-in)
 from ..agents.personal_assistant import PersonalAssistantAgent
 from ..agents.data_analyst import DataAnalystAgent
-from ..agents.hr_director import HRDirectorAgent
-from ..agents.dev_lead import DevLeadAgent
-from ..agents.operations_manager import OperationsManagerAgent
+
+# These agents are on hold until ReAct implementation is added
+# from ..agents.hr_director import HRDirectorAgent
+# from ..agents.dev_lead import DevLeadAgent
+# from ..agents.operations_manager import OperationsManagerAgent
 
 
 class AgentRouter:
@@ -49,9 +53,11 @@ class AgentRouter:
         
         # Add specialist agents
         self.register_agent(DataAnalystAgent())
-        self.register_agent(HRDirectorAgent()) 
-        self.register_agent(DevLeadAgent())
-        self.register_agent(OperationsManagerAgent())
+        
+        # These agents are on hold until ReAct implementation is added
+        # self.register_agent(HRDirectorAgent()) 
+        # self.register_agent(DevLeadAgent())
+        # self.register_agent(OperationsManagerAgent())
     
     def register_agent(self, agent: BaseAgent, is_primary: bool = False):
         """Register an agent in the routing system"""

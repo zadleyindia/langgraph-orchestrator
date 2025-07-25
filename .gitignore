@@ -1,9 +1,3 @@
-# Environment files
-.env
-.env.local
-.env.production
-.env.development
-
 # Python
 __pycache__/
 *.py[cod]
@@ -13,57 +7,49 @@ __pycache__/
 venv/
 env/
 ENV/
-.venv/
+.venv
 
-# Logs
-*.log
-logs/
-orchestrator.log
-
-# Docker
-.dockerignore
+# Environment variables
+.env
+.env.local
+.env.*.local
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Database
-*.db
-*.sqlite
+# Logs
+*.log
+logs/
 
-# Monitoring data
-monitoring/grafana/
-prometheus_data/
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
 
-# Temporary files
-tmp/
-temp/
-*.tmp
-
-# Build artifacts
+# Distribution
 dist/
 build/
 *.egg-info/
 
-# Coverage reports
-.coverage
-htmlcov/
-.pytest_cache/
+# Memory/Database
+*.db
+*.sqlite
+*.sqlite3
 
-# Test files
-test-*.py
-test-*.js
+# Temporary files
+temp/
+tmp/
+*.tmp
+*.bak
 
-# Node modules (for JS tests)
-node_modules/
-
-# Secrets
-*.pem
-*.key
-secrets/
+# MCP/Supergateway
+.supergateway/
+mcp-session-*
