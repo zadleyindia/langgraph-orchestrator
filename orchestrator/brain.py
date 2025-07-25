@@ -18,7 +18,8 @@ from .nodes.intent_analyzer import IntentAnalyzer
 from .nodes.planner import WorkflowPlanner
 from .nodes.executor_simple import ToolExecutor
 from .nodes.responder import ResponseGenerator
-from .clients.memory_client_direct import MemoryClientDirect
+# Memory client will be injected through proper MCP connection
+# from .clients.memory_client_direct import MemoryClientDirect
 from .coordination.agent_router import AgentRouter
 
 class PersonalAIBrain:
@@ -34,8 +35,8 @@ class PersonalAIBrain:
         # Initialize multi-agent system
         self.agent_router = AgentRouter()
         
-        # Initialize memory client
-        self.memory = MemoryClientDirect()
+        # Memory client will be initialized with MCP connection
+        self.memory = None  # Will be set up with MCP Supergateway
         
         # Initialize nodes (legacy - will be replaced by agent-specific processing)
         self.intent_analyzer = IntentAnalyzer(self.llm)
